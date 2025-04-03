@@ -1,0 +1,233 @@
+local Settings = {
+	On = true;
+	Range = {
+		X = 3.5;
+		Y = 3.5;
+		Z = 3.5;
+	};
+	Increment = 0.5;
+	Visualizer = {
+		On = false;
+		Color = Color3.fromRGB(40, 0, 216);
+	};
+
+	Keybinds = {
+		Increase = "q";
+		Decrease = "e";
+		Toggle = "r";
+		Visualizers = "t";
+	};
+	Internal = {
+		FakeHandleDeepSearch = true;
+		Handle = {};
+	};
+
+}
+
+
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local DefaultSize = Vector3.new(1, 0.8, 4)
+local hook = {}
+
+local Visualizers = {}
+Visualizers[1] = Instance.new("Part")
+Visualizers[1].Name = "\000\000\000"
+Visualizers[1].BottomSurface = Enum.SurfaceType.Smooth
+Visualizers[1].Transparency = 0
+Visualizers[1].TopSurface = Enum.SurfaceType.Smooth
+Visualizers[1].Color = Color3.fromRGB(40, 0, 216)
+Visualizers[1].Massless = true
+Visualizers[1].CanCollide = false
+Visualizers[1].CanTouch = false
+Visualizers[1].CanQuery = false
+Visualizers[1].Material = Enum.Material.ForceField
+Visualizers[1].Size = Vector3.new(1, 1, 1)
+Visualizers[1].CastShadow = false
+Visualizers[1].Shape = Enum.PartType.Ball
+Visualizers[1].Parent = workspace
+
+-- to protect visualizers
+--[[
+hook["visualizer"] = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+	if not checkcaller() then
+		local Args = {...}
+		if getnamecallmethod() == "Instance" or getnamecallmethod() == "instance' then
+			for i, v in pairs(Visualizers[1]) do
+				table.insert(Visualizers[1], nil)
+				if not table.insert(Visualizers[1], nil) then
+					table.remove(table.insert(Visualizers[1], nil), nil)
+					return {}
+				end
+			end
+		else
+		return hook["visualizer"](self, ...)
+	end
+end))
+]]
+
+local Handle = nil
+local FakeHandles = {}
+local FakeHandleDeepSearch = false
+
+local function GetFakeHandles()
+	local Found = {}
+	if Handle then
+		if FakeHandleDeepSearch then
+			for i, v in pairs(workspace:GetDescendants()) do
+				if v:IsA("BasePart") and (v:FindFirstChildOfClass("TouchTransmitter")) and (Handle.Position - v.Position).Magnitude <= 1 and v ~= Handle and v.Parent and not v.Parent:IsA("Accessory") and not Player:GetPlayerFromCharacter(v.Parent) then
+					table.insert(Found, v)
+				end
+			end
+			return Found
+		end
+		for i, v in pairs(workspace.Terrain:GetDescendants()) do
+			if v:IsA("BasePart") and (v:FindFirstChildOfClass("TouchTransmitter")) and (Handle.Position - v.Position).Magnitude <= 1 and v ~= Handle and v.Parent and not v.Parent:IsA("Accessory") and not Player:GetPlayerFromCharacter(v.Parent) then
+				table.insert(Found, v)
+			end
+		end
+		for i, v in pairs(workspace.CurrentCamera:GetDescendants()) do
+			if v:IsA("BasePart") and (v:FindFirstChildOfClass("TouchTransmitter")) and (Handle.Position - v.Position).Magnitude <= 1 and v ~= Handle and v.Parent and not v.Parent:IsA("Accessory") and not Player:GetPlayerFromCharacter(v.Parent) then
+				table.insert(Found, v)
+			end
+		end
+		for i, v in pairs(Players.Character:GetDescendants()) do
+			if v:IsA("BasePart") and (v:FindFirstChildOfClass("TouchTransmitter")) and (Handle.Position - v.Position).Magnitude <= 1 and v ~= Handle and v.Parent and not v.Parent:IsA("Accessory") and not Player:GetPlayerFromCharacter(v.Parent) then
+				table.insert(Found, v)
+			end
+		end
+	end
+	for i, v in pairs(Found) do
+		--print(v:GetFullName())
+		if not table.find(FakeHandles, v) then
+			table.insert(FakeHandles, v)
+		end
+	end
+	return Found
+end
+
+local TweenVisualizer = function(transparency, size)
+	local tweenInfo = TweenInfo.new(
+		0.3, -- Time
+		Enum.EasingStyle.Quad, 
+		Enum.EasingDirection.Out 
+	)
+
+	local tweenTransparency = TweenService:Create(
+		Visualizers[1],
+		tweenInfo,
+		{Transparency = transparency}
+	)
+
+	local tweenSize = TweenService:Create(
+		Visualizers[1],
+		tweenInfo,
+		{Size = size or Visualizers[1].Size}
+	)
+
+	tweenTransparency:Play()
+	tweenSize:Play()
+end
+
+local Info = function(Text)
+	StarterGui:SetCore("SendNotification", {Text = Text, Title = "Demon Angel Skidzone Revenge", Duration = 2, Icon = "114615513095899"})
+end
+
+UserInputService.InputBegan:Connect(function(Input, Gpe)
+	if Input.KeyCode == Enum.KeyCode[Settings.Keybinds.Increase:upper()] and not Gpe then
+		Info(" [X] " ..Settings.Range.X.. " [Y] " ..Settings.Range.Y.. " [Z] " ..Settings.Range.Z)
+		Settings.Range.X = Settings.Range.X + 1
+		Settings.Range.Y = Settings.Range.Y + 1
+		Settings.Range.Z = Settings.Range.Z + 1
+		TweenVisualizer(Visualizers[1].Transparency, Vector3.new(Settings.Range.X, Settings.Range.Y, Settings.Range.Z))
+	elseif Input.KeyCode == Enum.KeyCode[Settings.Keybinds.Decrease:upper()] and not Gpe then
+		Info(" [X] " ..Settings.Range.X.. " [Y] " ..Settings.Range.Y.. " [Z] " ..Settings.Range.Z)
+		Settings.Range.X = Settings.Range.X - 1
+		Settings.Range.Y = Settings.Range.Y - 1
+		Settings.Range.Z = Settings.Range.Z - 1
+		TweenVisualizer(Visualizers[1].Transparency, Vector3.new(Settings.Range.X, Settings.Range.Y, Settings.Range.Z))
+	elseif Input.KeyCode == Enum.KeyCode[Settings.Keybinds.Toggle:upper()] and not Gpe then
+		Settings.On = not Settings.On
+		if Settings.On then
+			Info(" [Toggled On] ")
+		else
+			Info(" [Toggled Off] ")
+		end
+	elseif Input.KeyCode == Enum.KeyCode[Settings.Keybinds.Visualizers:upper()] and not Gpe then
+		Settings.Visualizer.On = not Settings.Visualizer.On
+		if Settings.Visualizer.On then
+			TweenVisualizer(0)
+			Info(" [Visualizer On] ")
+		else 
+			TweenVisualizer(1)
+			Info(" [Visualizer Off] ")
+		end
+	end
+end)
+
+RunService.PreRender:Connect(function()
+	if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") and Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").Handle then
+		local Tool = Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+		local Handle = Tool.Handle
+		
+		Visualizers[1].CFrame = Handle.CFrame
+	end
+	
+	if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Tool") and Players.LocalPlayer.Character:FindFirstChildOfClass("Tool").Handle then
+		local Tool = Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+		local Handle = Tool.Handle
+		
+		if Settings.On then
+			--[[
+			for i, v in next, getconnection(Handle.Changed) do
+				v:Disable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("Size")) do
+				v:Disable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("Touched")) do
+				v:Disable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("TouchEnded")) do
+				v:Disable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("LocalSimulationTouched")) do
+				v:Disable()
+			end
+			]]
+			
+			Handle.Size = Vector3.new(Settings.Range.X, Settings.Range.Y, Settings.Range.Z)
+			for i, v in pairs(GetFakeHandles(Handle)) do
+				v.Size = Vector3.new(Settings.Range.X, Settings.Range.Y, Settings.Range.Z)
+			end
+		else
+			Handle.Size = DefaultSize
+			for i, v in pairs(GetFakeHandles(Handle)) do
+				v.Size = DefaultSize
+			end
+			--[[
+			for i, v in next, getconnection(Handle.Changed) do
+				v:Enable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("Size")) do
+				v:Enable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("Touched")) do
+				v:Enable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("TouchEnded")) do
+				v:Enable()
+			end
+			for i, v in next, getconnection(Handle:GetPropertyChangedSignal("LocalSimulationTouched")) do
+				v:Enable()
+			end
+			]]
+			
+			
+		end
+	end
+end)
